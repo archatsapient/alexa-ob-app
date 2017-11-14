@@ -1,0 +1,45 @@
+{
+  "intents": [
+    {
+      "slots": [
+        {
+          "name": "account",
+          "type": "NUMBER"
+        }
+      ],
+      "intent": "GetBalanceIntent"
+    },
+    {
+      "intent": "SendMoneyIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "account",
+          "type": "NUMBER"
+        },
+        {
+          "name": "reference",
+          "type": "AMAZON.LITERAL"
+        }
+        
+      ],
+      "intent": "PostPaymentIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "account",
+          "type": "NUMBER"
+        }        
+      ],
+      "intent": "TransactionsIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    }
+  ]
+}

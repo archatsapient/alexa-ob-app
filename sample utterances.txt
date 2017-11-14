@@ -1,0 +1,12 @@
+GetBalanceIntent Check your balance {three zero four four four two|account}
+GetBalanceIntent Check my balance {three zero four four four two|account}
+GetBalanceIntent get my balance {three zero four four four two|account}
+GetBalanceIntent get my account balance {three zero four four four two|account}
+SendMoneyIntent can I spend fifty pounds
+SendMoneyIntent can I spend
+PostPaymentIntent make a payment  {three zero four four four two|account} reference {tax| reference}
+PostPaymentIntent make  a payment  {three zero four four four two|account} reference {school fee| reference}
+TransactionsIntent  get my transactions {three zero four four four two|account}
+TransactionsIntent  get me my transactions {three zero four four four two|account}
+TransactionsIntent transactions {three zero four four four two|account}
+TransactionsIntent what are my transactions {three zero four four four two|account}
