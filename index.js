@@ -1,8 +1,6 @@
 // 1. Text strings =====================================================================================================
 //    Modify these strings and messages to change the behavior of your Lambda function
 
-
-
 const SKILL_NAME = "OB";
 
 const transactionOptions = {
@@ -35,7 +33,7 @@ const Alexa = require('alexa-sdk');
 const util = require('util');
 const http = require('http');
 const querystring = require('querystring');
-//const Speech = require('ssml-builder');
+const Speech = require('ssml-builder');
 
 exports.handler = function(event, context, callback) {
     var alexa = Alexa.handler(event, context);
@@ -78,17 +76,7 @@ const handlers = {
         });
     },
     'SendMoneyIntent': function () {
-        /**
-            var speech = new Speech();
-			speech.say(" You want to spend £50 but you have a mortgage payment due on 17th this month");
-			speech.pause('500ms');
-            speech.say("if you make this payment, then you might not be able to keep your mortgage payment");			
-			speech.pause("500ms");
-			speech.say("it can cause you you some pain later. May be use phone a friend or ask the audience?");
-			speech.pause("500ms");
-			var speechOutput = speech.ssml(true);  
-            this.emit(':tell', speechOutput);
-            **/
+        //TODO Plug ML Model for upsell
     },
 
     'GetBalanceIntent': function () {
@@ -99,46 +87,21 @@ const handlers = {
             account = '01020304';
         } else {
             account = this.event.request.intent.slots.account.value.toString();
-            //account = '01020304';
-        }     
-        balanceOptions.path = (balanceOptions.path+account);
-        //balanceOptions.path = querystring.escape(balanceOptions.path+account);
-    	var req = http.request(balanceOptions, res => {
-        res.setEncoding('utf8');
-        var returnData = "";
-        var output;
-        res.on('data', chunk => {
-            returnData = returnData + chunk;
-        });
-        res.on('end', () => {
-           try {
-                var channelObj = JSON.parse(returnData);
-                result = util.inspect(channelObj, {showHidden: false, depth: null})
-                balance = channelObj.balance;
-                output = "Your account balance is "+balance+" pounds";
-                this.emit(':ask', output, repeat);
-               
-            } catch(e) {
-                output = "Apologies, There was an error in fetching account balance for account "+account;
-                this.emit(':ask', output, repeat);
-            }
-        });
-
-    });
-    req.end();
-            
-            /**
+        }  
+        getBalance(account, (output) => {   
+			var repeatMessage = "You can check your transactions or can make a payment"; 
+			
             var speech = new Speech();
-            speech.say("Your account balance is "+balance+" pounds");
+            speech.say(output);
             speech.pause('300ms');
             speech.say("life is beautiful");
 			speech.pause('100ms');
-            speech.say("You can check your transaction history or can make a payment");  
-			 		
+            speech.say("You can check your transaction history or can make a payment");
             var speechOutput = speech.ssml(true);            
-            this.emit(':ask', speechOutput, repeat);
-            **/
-            
+            this.emit(':ask', speechOutput, repeatMessage);       
+			
+			//this.emit(':ask', output, repeatMessage);
+        });
         
     },
 
@@ -167,6 +130,33 @@ const handlers = {
 // 3. Helper Function  =================================================================================================
 
 
+function getBalance(account, callback) {
+    balanceOptions.path = balanceOptions.path+account;
+    var req = http.request(balanceOptions, res => {
+        res.setEncoding('utf8');
+        var returnData = "";
+        res.on('data', chunk => {
+            returnData = returnData + chunk;
+        });
+        res.on('end', () => {
+            try {
+                var channelObj = JSON.parse(returnData);
+                result = util.inspect(channelObj, {showHidden: false, depth: null})
+                balance = channelObj.balance;
+                output = "Your account balance is "+balance+" pounds";
+                callback(output);
+               
+            } catch(e) {
+                output = "Apologies, There was an error in fetching account balance for account "+account;
+                callback(output);
+            }
+
+        });
+
+    });
+    req.end();
+}
+
 
 function getTransactions(account, callback) {
         transactionOptions.path = (transactionOptions.path+account);
@@ -183,26 +173,22 @@ function getTransactions(account, callback) {
            var totalObjects = Math.min(Object.keys(channelObj).length, 3);
             var i = 0;
             
-			//var speech = new Speech();
-            while (i < totalObjects && i < 2) {
-            //while (i < 2) {
-                
-                output = output + " transaction "+(i+1);
-                output = output + channelObj[i].description;
-                /**
+			var speech = new Speech();
+            while (i < totalObjects) {
+            //while (i < 2) {         
+                               
 				speech.say(" transaction "+(i+1));
 				speech.pause("100ms");
 				speech.say(" amount in pounds "+channelObj[i].out);
 				speech.pause("100ms");
 				speech.say(' Reference '+ channelObj[i].description);
-				speech.pause("500ms");   
-				**/
+				speech.pause("500ms");			
 				i += 1;
                 
             }			
-			//var speechOutput = speech.ssml(true);   
-			//callback(speechOutput);
-			callback(output+"-----"+account);
+			var speechOutput = speech.ssml(true);   
+			callback(speechOutput);
+			
         });
 
     });
@@ -210,7 +196,8 @@ function getTransactions(account, callback) {
 }
 
 function postPayment(account, callback) {
-   
+   //TODO pass paymentId, amount, account and reference to construct payment submission json
+   // Can add payment setup to wire the info 
     var req = http.request(options, res => {
         res.setEncoding('utf8');
         var returnData = "";
@@ -225,10 +212,9 @@ function postPayment(account, callback) {
         });
 
     });
-    //TODO : substitute reference, payment id and account number in post 
-    var postData = '{"Data": { "PaymentId": "7290", "Initiation": { "InstructionIdentification": "ANSM023", "EndToEndIdentification": "FRESCO.21302.GFX.37", "InstructedAmount": { "Amount": "50.12", "Currency": "GBP" }, "DebtorAccount": { "SchemeName": "SortCodeAccountNumber", "Identification": "01020301020304", "Name": "Archana Dixit" }, "CreditorAccount": { "SchemeName": "SortCodeAccountNumber", "Identification":'+"02030402030405"+', "Name": "Gareth Down"}, "RemittanceInformation": { "Reference": "Payment for iphone", "Unstructured": "Internal ops code 5120103" } } }, "Risk": { "PaymentContextCode": "PersonToPerson" }}';
+    //TODO : substitute reference, payment id, amount and account number in post 
+    var postData = '{"Data": { "PaymentId": "7290", "Initiation": { "InstructionIdentification": "ANSM023", "EndToEndIdentification": "FRESCO.21302.GFX.37", "InstructedAmount": { "Amount": "50.12", "Currency": "GBP" }, "DebtorAccount": { "SchemeName": "SortCodeAccountNumber", "Identification": "01020301020304", "Name": "Archana Dixit" }, "CreditorAccount": { "SchemeName": "SortCodeAccountNumber", "Identification":"02030402030405", "Name": "Gareth Down"}, "RemittanceInformation": { "Reference": "Payment for iphone", "Unstructured": "Internal ops code 5120103" } } }, "Risk": { "PaymentContextCode": "PersonToPerson" }}';
     var jsonObject = JSON.parse(postData);
-    
     req.write(postData);
     req.end();
 }
